@@ -30,11 +30,35 @@ jobs:
       # Step 1: Build your artifacts.
       #
       # ========================================================
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: 'sbt'
+      
+      - name: Compile NcqaFirstStage
+        run: |
+          cd NCQA/NcqaFirstStage
+          sbt clean package
+      
+      - name: Compile NcqaHedisGICTempLoad
+        run: |
+          cd NCQA/NcqaHedisGICTempLoad
+          sbt clean package
+      
+      - name: Compile NcqaKPI
+        run: |
+          cd NCQA/NcqaKPI
+          sbt clean package
+      
       - name: Build artifacts
         run: |
-            # These are some amazing artifacts.
-            echo "artifact1" > artifact1
-            echo "artifact2" > artifact2
+          mkdir -p build
+          cp NCQA/NcqaFirstStage/target/scala-2.13/*.jar build/
+          cp NCQA/NcqaHedisGICTempLoad/target/scala-2.13/*.jar build/
+          cp NCQA/NcqaKPI/target/scala-2.13/*.jar build/
+          ls -la build/
 
       # ========================================================
       #
@@ -50,9 +74,9 @@ jobs:
           set -euo pipefail
 
           # List the artifacts the provenance will refer to.
-          files=$(ls artifact*)
+          files=$(find build -name "*.jar" -type f)
           # Generate the subjects (base64 encoded).
-          echo "hashes=$(sha256sum $files | base64 -w0)" >> "${GITHUB_OUTPUT}"
+          echo "digests=$(sha256sum $files | base64 -w0)" >> "${GITHUB_OUTPUT}"
 
   provenance:
     needs: [build]
